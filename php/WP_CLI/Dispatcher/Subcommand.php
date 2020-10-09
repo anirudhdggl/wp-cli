@@ -356,7 +356,7 @@ class Subcommand extends CompositeCommand {
 					$value   = $assoc_args[ $spec['name'] ];
 					$options = $spec_args['options'];
 					// phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict -- This is a loose comparison by design.
-					if ( ! in_array( $assoc_args[ $spec['name'] ], $spec_args['options'] ) ) {
+					if ( ! in_array( $value, $options ) ) {
 						// Try whether it might be a comma-separated list of multiple values.
 						$values = array_map( 'trim', explode( ',', $value ) );
 						$count  = count( $values );
@@ -466,6 +466,25 @@ class Subcommand extends CompositeCommand {
 			$cmd = $parent . ' ' . $cmd;
 		}
 		WP_CLI::do_hook( "before_invoke:{$cmd}" );
+
+		// Check if `--prompt` arg passed or not.
+		if ( ! empty( $prompted_once ) && true === $prompted_once ) {
+			// Unset empty args.
+			$actual_args = $assoc_args;
+			foreach ( $actual_args as $key ) {
+				if ( empty( $actual_args[ $key ] ) ) {
+					unset( $actual_args[ $key ] );
+				}
+			}
+
+			WP_CLI::log(
+				sprintf(
+					'wp %s %s',
+					$cmd,
+					ltrim( WP_CLI\Utils\assoc_args_to_str( $actual_args ), ' ' )
+				)
+			);
+		}
 
 		call_user_func( $this->when_invoked, $args, array_merge( $extra_args, $assoc_args ) );
 
